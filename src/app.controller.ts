@@ -4,8 +4,8 @@ import helmet from 'helmet';
 import cors from 'cors';
 import {rateLimit} from 'express-rate-limit';
 import { PORT } from './config/config.service';
-import { stat } from 'node:fs';
 import { AppError, global_error_handeller } from './common/utils/global.error.handeller';
+import authRouter from './modules/auth/auth.controller';
 
 const app:Application = express();
 const port:number = PORT;
@@ -23,6 +23,8 @@ const bootstrap =  () => {
     app.use(express.json());
     app.use(helmet());
     app.use(limiter);
+
+    app.use("/auth",authRouter)
 
     app.get("/",(req:Request,res:Response)=>{
         res.status(200).json({message:"Welcome to the Social Media API"});
