@@ -6,6 +6,7 @@ import {rateLimit} from 'express-rate-limit';
 import { PORT } from './config/config.service';
 import { AppError, global_error_handeller } from './common/utils/global.error.handeller';
 import authRouter from './modules/auth/auth.controller';
+import { checkConnectionDB } from './DB/connectionDB';
 
 const app:Application = express();
 const port:number = PORT;
@@ -24,6 +25,7 @@ const bootstrap =  () => {
     app.use(helmet());
     app.use(limiter);
 
+    checkConnectionDB();
     app.use("/auth",authRouter)
 
     app.get("/",(req:Request,res:Response)=>{
