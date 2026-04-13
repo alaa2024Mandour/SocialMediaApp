@@ -7,6 +7,7 @@ import { PORT } from './config/config.service';
 import { AppError, global_error_handeller } from './common/utils/global.error.handeller';
 import authRouter from './modules/auth/auth.controller';
 import { checkConnectionDB } from './DB/connectionDB';
+import userRouter from './modules/users/user.controller';
 
 const app:Application = express();
 const port:number = PORT;
@@ -27,6 +28,7 @@ const bootstrap =  () => {
 
     checkConnectionDB();
     app.use("/auth",authRouter)
+    app.use("/users",userRouter)
 
     app.get("/",(req:Request,res:Response)=>{
         res.status(200).json({message:"Welcome to the Social Media API"});
