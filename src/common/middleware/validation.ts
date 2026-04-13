@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { ZodType } from "zod";
-import { AppError } from "../common/utils/global.error.handeller";
+import { AppError } from "../utils/global.error.handeller";
 import path from "node:path";
 
 type reqType = keyof Request

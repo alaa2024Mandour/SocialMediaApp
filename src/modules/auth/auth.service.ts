@@ -1,11 +1,10 @@
+import { BaseRepository } from './../../DB/repositories/base.repository';
 import { NextFunction, Request, Response } from "express";
-import { signUpDTO } from "./auth.dto";
-import { Model } from "mongoose";
 import { IUser, userModel } from "../../DB/models/user.model";
 
 class AuthService {
 
-    private readonly _userModel:Model<IUser> = userModel;
+    private readonly _userModel = new BaseRepository<IUser>(userModel);
 
     signUp = async (req:Request,res:Response,next:NextFunction) => {
         const {userName,email,password,age,phone,gender} = req.body

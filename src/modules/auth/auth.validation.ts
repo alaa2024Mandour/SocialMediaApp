@@ -4,7 +4,7 @@ import { GenderEnum, RoleEnum } from "../../common/enum/user.enum";
 export const signUpSchema = {
     body:z.object({
         userName: z.string(),
-        email: z.string().email(),
+        email: z.email(),
         phone: z.string().optional(),
         address: z.string().optional(),
         age: z.number().min(18),
