@@ -6,6 +6,10 @@ import { AppError } from '../../common/utils/global.error.handeller';
 import * as configService from "../../config/config.service";
 import { v4 as uuidv4 } from 'uuid';
 import userRepository from '../../DB/repositories/user.repository';
+import { Hash } from '../../common/utils/security/hash.security';
+import { encrypt } from '../../common/utils/security/encrypt.security';
+import { generateOTP, sendEmail } from '../../common/utils/email/send.email';
+import { emailTemplate } from '../../common/utils/email/email.template';
 
 class AuthService {
 
@@ -16,7 +20,21 @@ class AuthService {
         if(await this._userModel.checkUser(email)){
             throw new AppError("email already exist",400)
         }
-        const user = await this._userModel.create({userName,email,password,age,phone,gender} );
+        const user = await this._userModel.create({
+            userName,
+            email,
+            password:Hash({plainText:password}),
+            age,
+            phone:encrypt(phone),
+            gender
+        });
+
+        const otp = await generateOTP();
+        await sendEmail({
+            to:email,
+            subject:"welcome to social media app , verify your account",
+            html:emailTemplate(otp)
+        })
         res.status(200).json({message:"user signup successful",user})
     }
 
