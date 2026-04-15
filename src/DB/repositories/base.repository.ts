@@ -3,7 +3,7 @@ import { Types } from "mongoose";
 import { ProjectionType } from "mongoose";
 import { HydratedDocument, Model } from "mongoose";
 
-export class BaseRepository<TDocument> {
+export abstract class BaseRepository<TDocument> {
     constructor(protected readonly model : Model<TDocument>){}
 
     async create(data : Partial<TDocument>):Promise<HydratedDocument<TDocument>>{
