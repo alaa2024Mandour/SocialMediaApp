@@ -8,6 +8,9 @@ import { AppError, global_error_handeller } from './common/utils/global.error.ha
 import authRouter from './modules/auth/auth.controller';
 import { checkConnectionDB } from './DB/connectionDB';
 import userRouter from './modules/users/user.controller';
+import  RedisService  from './common/service/redis.service';
+import UserRepository from './DB/repositories/user.repository';
+import { userModel } from './DB/models/user.model';
 
 const app:Application = express();
 const port:number = PORT;
@@ -22,13 +25,24 @@ const bootstrap =  () => {
         legacyHeaders: false, // Disable the `X-RateLimit-*` headers
     });
 
+    app.use(cors());
     app.use(express.json());
-    app.use(helmet());
+    // app.use(helmet());
     app.use(limiter);
 
     checkConnectionDB();
+    // RedisService.connect()
+    
     app.use("/auth",authRouter)
     app.use("/users",userRouter)
+
+    async function test (){
+        const user = await new UserRepository().findOne({
+            filter:{firstName:"Alaa"}
+        })
+        console.log({user});
+    }
+    test()
 
     app.get("/",(req:Request,res:Response)=>{
         res.status(200).json({message:"Welcome to the Social Media API"});

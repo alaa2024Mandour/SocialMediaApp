@@ -31,6 +31,17 @@ export const signInSchema = {
 }
 
 
+export const confirmEmail_schema = {
+    body:z.object({
+        email:general_rules.email,
+        code:z.string().regex(/^\d{6}$/)
+    }).required()
+}
 
+export const resendEmail_schema = {
+    body:z.object({
+        email:general_rules.email,
+    }).required()
+}
 
 

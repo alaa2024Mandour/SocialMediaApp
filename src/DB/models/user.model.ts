@@ -1,4 +1,4 @@
-import { GenderEnum, RoleEnum } from './../../common/enum/user.enum';
+import { GenderEnum, ProviderEnum, RoleEnum } from './../../common/enum/user.enum';
 import mongoose, { Mongoose, Schema, Types } from "mongoose";
 
 export interface IUser {
@@ -13,6 +13,7 @@ export interface IUser {
     address?:String
     gender?: GenderEnum,
     role?: RoleEnum,
+    provider: ProviderEnum,
     confirmed?: Boolean,
     createdAt: Date,
     updatedAt: Date
@@ -37,14 +38,19 @@ const userSchema = new Schema<IUser>({
     },
     password: { 
         type: String, 
-        required: true 
+        required: function(){
+            return this.provider == ProviderEnum.GOOGLE ? false :true
+        }
     },
     age: { 
         type: Number, 
         required: true 
     },
     phone: { 
-        type: String 
+        type: String ,
+        required: function(){
+            return this.provider == ProviderEnum.GOOGLE ? false :true
+        }
     },
     address:{
         type:String
@@ -59,10 +65,16 @@ const userSchema = new Schema<IUser>({
         enum: Object.values(RoleEnum), 
         default: RoleEnum.USER 
     },
+    provider: { 
+        type: String, 
+        enum: Object.values(ProviderEnum), 
+        default: ProviderEnum.LOCAL
+    },
     confirmed: { 
         type: Boolean, 
         default: false 
     },
+    deletedAt:Date
 }, {
     timestamps: true,
     strict: true,
@@ -78,4 +90,18 @@ userSchema.virtual("userName").get(function(){
     this.set({firstName, lastName});
 })
 
+userSchema.pre("findOne",function(){
+    console.log("--------findOne---------");
+    console.log(this.getQuery());
+    const {paranoid , ...rest} = this.getQuery()
+
+    if(paranoid==false){
+        this.setQuery({...rest})
+    }
+    else{
+        this.setQuery({deleteAt:{$exists:false},...rest})
+    }
+})
+
 export const userModel = mongoose.models.User || mongoose.model<IUser>("User", userSchema);
+

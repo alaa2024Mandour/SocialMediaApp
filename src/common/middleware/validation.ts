@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { ZodType } from "zod";
 import { AppError } from "../utils/global.error.handeller";
-import path from "node:path";
 
 type reqType = keyof Request
 type schemaType = Partial<Record<reqType,ZodType>>
@@ -12,7 +11,6 @@ const validationMid = (schema:schemaType) => {
         for (const key of Object.keys(schema) as reqType[]) {
             if(!schema[key]) continue;
             const result = schema[key].safeParse(req[key])
-            // console.log(result);
             
             if(!result.success){
                 errorsResult.push({
