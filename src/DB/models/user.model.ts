@@ -14,7 +14,9 @@ export interface IUser {
     gender?: GenderEnum,
     role?: RoleEnum,
     provider: ProviderEnum,
+    profilePic?: String,
     confirmed?: Boolean,
+    deletedAt?: Date,
     createdAt: Date,
     updatedAt: Date
 }
@@ -70,6 +72,7 @@ const userSchema = new Schema<IUser>({
         enum: Object.values(ProviderEnum), 
         default: ProviderEnum.LOCAL
     },
+    profilePic: String,
     confirmed: { 
         type: Boolean, 
         default: false 
@@ -90,18 +93,18 @@ userSchema.virtual("userName").get(function(){
     this.set({firstName, lastName});
 })
 
-userSchema.pre("findOne",function(){
-    console.log("--------findOne---------");
-    console.log(this.getQuery());
-    const {paranoid , ...rest} = this.getQuery()
+// userSchema.pre("findOne",function(){
+//     console.log("--------findOne---------");
+//     console.log(this.getQuery());
+//     const {paranoid , ...rest} = this.getQuery()
 
-    if(paranoid==false){
-        this.setQuery({...rest})
-    }
-    else{
-        this.setQuery({deleteAt:{$exists:false},...rest})
-    }
-})
+//     if(paranoid==false){
+//         this.setQuery({...rest})
+//     }
+//     else{
+//         this.setQuery({deleteAt:{$exists:false},...rest})
+//     }
+// })
 
 export const userModel = mongoose.models.User || mongoose.model<IUser>("User", userSchema);
 

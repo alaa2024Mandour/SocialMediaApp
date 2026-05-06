@@ -31,7 +31,7 @@ const bootstrap =  () => {
     app.use(limiter);
 
     checkConnectionDB();
-    // RedisService.connect()
+    RedisService.connect()
     
     app.use("/auth",authRouter)
     app.use("/users",userRouter)
@@ -42,7 +42,7 @@ const bootstrap =  () => {
         })
         console.log({user});
     }
-    test()
+    // test()
 
     app.get("/",(req:Request,res:Response)=>{
         res.status(200).json({message:"Welcome to the Social Media API"});
