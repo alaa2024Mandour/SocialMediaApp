@@ -81,6 +81,7 @@ class UserService {
         })
         return keys;
     }
+    
     getFilesFromFolder = async (req:Request,res:Response,next:NextFunction) => {
         const folderName = req.query.folderName as string | undefined;
         if(!folderName) throw new AppError("folder name required");

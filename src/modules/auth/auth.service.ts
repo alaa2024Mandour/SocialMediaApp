@@ -14,12 +14,14 @@ import { success_response } from '../../common/utils/successRes';
 import RedisService from '../../common/service/redis.service';
 import { ProviderEnum, RoleEnum } from '../../common/enum/user.enum';
 import { OAuth2Client, TokenPayload } from 'google-auth-library';
+import notificationService from '../../common/service/notification.service';
 
 class AuthService {
 
     private readonly _userModel = new userRepository();
     private readonly _redisService = RedisService;
     private readonly _authenticationService = AuthenticationService;
+    private readonly _notificationService = notificationService;
 
     sendEmailOTP = async ({email,subject}:{email:string,subject:string}) => {
     const otpBlocked = await this._redisService.ttl(this._redisService.blocked_otp({ email }));
@@ -98,7 +100,7 @@ class AuthService {
     }
 
     signIn = async (req: Request, res: Response, next: NextFunction) => {
-        const { email, password } = req.body
+        const { email, password, fcm } = req.body
         const user = await this._userModel.findOne({ filter: { 
             email
         } });
@@ -112,7 +114,7 @@ class AuthService {
             payload: { id: user.id },
             secretOrPrivateKey: user.role == RoleEnum.USER ? configService.ACCESS_SECRET_KEY_USER! : configService.ACCESS_SECRET_KEY_ADMIN!,
             options: {
-                expiresIn: "1m",
+                expiresIn: "2h",
                 jwtid: randomID
             }
         })
@@ -125,6 +127,20 @@ class AuthService {
                 jwtid: randomID
             }
         })
+
+        if(fcm){
+            await this._redisService.addFCM(user._id, fcm)
+            const tokens = await this._redisService.getFCMs(user._id)
+
+            // if user logged in from more than one device
+            await this._notificationService.sendNotifications({
+                tokens,
+                data:{
+                    title:`Welcome back ${user.firstName}`,
+                    body:"in our socialMediaApp.........."
+                }
+            })
+        }
         res.status(200).json({ message: "user signin successful", data: { accessToken, refreshToken } })
     }
 
