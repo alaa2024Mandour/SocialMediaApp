@@ -37,10 +37,10 @@ class UserService {
             contentType,
             path:`users/${req.user!._id}`
         });
-        await this._userModel.findByIdAndUpdate({
-            id:req.user!._id,
-            updateData: { profilePic: key }
-        })
+        // await this._userModel.findByIdAndUpdate({
+        //     id:req.user!._id,
+        //     updateData: { profilePic: key }
+        // })
         return success_response({res,data: {url,key}})
     }
     

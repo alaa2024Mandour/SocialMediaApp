@@ -41,9 +41,24 @@ const PostSchema = new Schema<IPost>({
         required:true
     },
     folderId:String
+},
+{
+    timestamps: true,
+    strict: true,
+    toJSON: {virtuals: true,} ,
+    toObject: {virtuals: true,}
 }
 )
 
+
+PostSchema.virtual(
+    "comments",
+    {
+        ref:"Comment",
+        localField:"_id",
+        foreignField:"refId"
+    }
+)
 
 
 // PostSchema.pre("findOne",function(){

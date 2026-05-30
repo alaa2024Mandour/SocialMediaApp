@@ -1,19 +1,8 @@
-import AuthenticationService from '../../common/service/authentication.service';
 import { NextFunction, Request, Response } from "express";
 import { AppError } from '../../common/utils/global.error.handeller';
-import * as configService from "../../config/config.service";
-import { v4 as uuidv4 } from 'uuid';
 import userRepository from '../../DB/repositories/user.repository';
-import { Compare, Hash } from '../../common/utils/security/hash.security';
-import { encrypt } from '../../common/utils/security/encrypt.security';
-import { generateOTP, sendEmail } from '../../common/utils/email/send.email';
-import { emailTemplate } from '../../common/utils/email/email.template';
-import { eventEmitter } from '../../common/utils/email/email.events';
-import { EventEnum } from '../../common/enum/event.enum';
 import { success_response } from '../../common/utils/successRes';
 import RedisService from '../../common/service/redis.service';
-import { ProviderEnum, RoleEnum } from '../../common/enum/user.enum';
-import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import { createPostDTO, likePostDTO, updatePostDTO } from './post.dto';
 import { Types } from 'mongoose';
 import { randomUUID } from 'node:crypto';
@@ -21,7 +10,6 @@ import { S3Service } from '../../common/service/s3.service';
 import { StorageEnum } from '../../common/enum/multer.enum';
 import PostRepository from '../../DB/repositories/post.repository';
 import notificationService from '../../common/service/notification.service';
-import { Availability_Enum } from '../../common/enum/post.enum';
 import { postAvailability } from '../../common/utils/post.utils';
 
 class PostService {
@@ -37,7 +25,6 @@ class PostService {
 
         let mentions: Types.ObjectId[] = []
         let fcmTokens: string[] = []
-
 
         if (tags?.length) {
             const mentionsTags = await this._userModel.find({
@@ -88,6 +75,7 @@ class PostService {
 
         if (fcmTokens?.length) {
             await this._notificationService.sendNotifications({
+                userId:req.user!._id,
                 tokens: fcmTokens,
                 data: {
                     title: `${req?.user?.firstName} mention you on a new Post `,
@@ -100,31 +88,42 @@ class PostService {
     }
 
     getPosts = async (req: Request, res: Response, next: NextFunction) => {
-        const posts = await this._postModel.paginate(
-            {
-                page: +req.query.page!,
-                limit: +req.query.limit!,
-                search: {
-                    ...postAvailability(req),
-                    ...(req.query.search ? {
-                        $or: [
-                            { content: { $regex: req.query.search, $options: "i" } }
-                        ]
-                    } : {})
-                }
-            }
-        )
-
-        // const posts = await this._postModel.find({
-        //     filter:{
-        //         $or:[
-        //             {availability : Availability_Enum.public},
-        //             {availability : Availability_Enum.onlyMe , createdBy:req.user?._id},
-        //             {availability : Availability_Enum.friends , createdBy:{$in:[...(req?.user?.friends || []), req.user?._id]}},
-        //             {tags :{$in:req.user?._id}},
-        //         ]
+        // const posts = await this._postModel.paginate(
+        //     {
+        //         page: +req.query.page!,
+        //         limit: +req.query.limit!,
+        //         search: {
+                    
+        //             ...(req.query.search ? {
+        //                 $or: [
+        //                     { content: { $regex: req.query.search, $options: "i" } },
+        //                     ...postAvailability(req),
+        //                 ]
+        //             } : {})
+        //         }
         //     }
-        // })
+        // )
+
+        const posts = await this._postModel.find({
+            filter:{
+                $or:[
+                    ...postAvailability(req),
+                ]
+            },
+            options:{
+                populate:[
+                    {
+                        path:"comments",
+                        match:{
+                            commentId:{$exists:false}
+                        },
+                        populate:{
+                            path:"replies"
+                        }
+                    }
+                ]
+            }
+        })
 
         return success_response({ res, data: posts })
     }
@@ -230,6 +229,7 @@ class PostService {
 
         if (fcmTokens?.length) {
             await this._notificationService.sendNotifications({
+                userId:req.user!._id,
                 tokens: fcmTokens,
                 data: {
                     title: `${req?.user?.firstName} mention you on a new Post `,

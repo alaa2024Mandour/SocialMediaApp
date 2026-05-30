@@ -131,9 +131,9 @@ class AuthService {
         if(fcm){
             await this._redisService.addFCM(user._id, fcm)
             const tokens = await this._redisService.getFCMs(user._id)
-
             // if user logged in from more than one device
             await this._notificationService.sendNotifications({
+                userId:user._id,
                 tokens,
                 data:{
                     title:`Welcome back ${user.firstName}`,

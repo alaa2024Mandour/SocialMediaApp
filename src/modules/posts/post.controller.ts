@@ -5,8 +5,11 @@ import { createPostSchema, likePostSchema, updatePostSchema } from "./post.valid
 import multerCloud from "../../common/middleware/multer.cloud";
 import { MimeEnum, StorageEnum } from "../../common/enum/multer.enum";
 import authMiddleware from "../../common/middleware/authentication";
+import commentRouter from "../comments/comment.controller";
 
 const postRouter = Router()
+
+postRouter.use("/:postId/comments{/:commentId/reply}",commentRouter)
 
 postRouter.post(
     "/createPost", 

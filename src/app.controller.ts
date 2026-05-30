@@ -34,6 +34,7 @@ const bootstrap =  () => {
     checkConnectionDB();
     RedisService.connect()
     
+    
     app.use("/auth",authRouter)
     app.use("/users",userRouter)
     app.use("/posts",postRouter)
@@ -46,16 +47,16 @@ const bootstrap =  () => {
     }
     // test()
 
-    app.post("/send-notification",(req:Request,res:Response)=>{
-        console.log({token:req.body.token});
-        notificationService.sendNotification({
-            token:req.body.token,
-            data:{
-                title:"Hi A'laa",
-                body:"welcome in our app"
-            }
-        })
-    })
+    // app.post("/send-notification",(req:Request,res:Response)=>{
+    //     console.log({token:req.body.token});
+    //     notificationService.sendNotification({
+    //         token:req.body.token,
+    //         data:{
+    //             title:"Hi A'laa",
+    //             body:"welcome in our app"
+    //         }
+    //     })
+    // })
 
     app.get("/",(req:Request,res:Response)=>{
         res.status(200).json({message:"Welcome to the Social Media API"});
