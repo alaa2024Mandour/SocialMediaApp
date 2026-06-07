@@ -1,4 +1,4 @@
-import {PopulateOptions, QueryFilter, QueryOptions } from "mongoose";
+import { PopulateOptions, QueryFilter, QueryOptions } from "mongoose";
 import { Types } from "mongoose";
 import { ProjectionType } from "mongoose";
 import { HydratedDocument, Model } from "mongoose";
@@ -68,6 +68,18 @@ export abstract class BaseRepository<TDocument> {
                 options?: QueryOptions<TDocument>
             }): Promise<HydratedDocument<TDocument> | null> {
         return this.model.findOneAndUpdate(filter, updateData, { new: true, runValidators: true, ...options })
+    }
+
+    async findOneAndDelete(
+        {
+            filter,
+            options
+        }:
+            {
+                filter: any,
+                options?: QueryOptions<TDocument>
+            }): Promise<HydratedDocument<TDocument> | null> {
+        return this.model.findOneAndDelete(filter, options)
     }
 
     async find(

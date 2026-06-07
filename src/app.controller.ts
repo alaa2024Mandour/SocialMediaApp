@@ -1,22 +1,32 @@
 import express from 'express';
-import  type { Request, Response,  Application, NextFunction } from 'express';
+import type {
+    Request,
+    Response,
+    Application,
+    NextFunction
+} from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
-import {rateLimit} from 'express-rate-limit';
+import { rateLimit } from 'express-rate-limit';
 import { PORT } from './config/config.service';
-import { AppError, global_error_handeller } from './common/utils/global.error.handeller';
+import {
+    AppError,
+    global_error_handeller
+} from './common/utils/global.error.handeller';
 import authRouter from './modules/auth/auth.controller';
 import { checkConnectionDB } from './DB/connectionDB';
 import userRouter from './modules/users/user.controller';
-import  RedisService  from './common/service/redis.service';
+import RedisService from './common/service/redis.service';
 import UserRepository from './DB/repositories/user.repository';
-import notificationService from "./common/service/notification.service"
 import postRouter from './modules/posts/post.controller';
+import { createHandler } from 'graphql-http/lib/use/express';
+import { gql_schema } from './modules/graphql/grapgql.schema';
+import authMiddleware from './common/middleware/authentication';
+import { Server } from 'socket.io';
+const app: Application = express();
+const port: number = PORT;
 
-const app:Application = express();
-const port:number = PORT;
-
-const bootstrap =  () => { 
+const bootstrap = () => {
 
     const limiter = rateLimit({
         windowMs: 15 * 60 * 1000, // 15 minutes
@@ -33,17 +43,20 @@ const bootstrap =  () => {
 
     checkConnectionDB();
     RedisService.connect()
-    
-    
-    app.use("/auth",authRouter)
-    app.use("/users",userRouter)
-    app.use("/posts",postRouter)
 
-    async function test (){
+
+    app.use("/auth", authRouter)
+    app.use("/users", userRouter)
+    app.use("/posts", postRouter)
+
+    app.use("/graphql", createHandler({ schema: gql_schema, context: (req) => ({ req }) }))
+
+
+    async function test() {
         const user = await new UserRepository().findOne({
-            filter:{firstName:"Alaa"}
+            filter: { firstName: "Alaa" }
         })
-        console.log({user});
+        console.log({ user });
     }
     // test()
 
@@ -58,20 +71,46 @@ const bootstrap =  () => {
     //     })
     // })
 
-    app.get("/",(req:Request,res:Response)=>{
-        res.status(200).json({message:"Welcome to the Social Media API"});
+    app.get("/", (req: Request, res: Response) => {
+        res.status(200).json({ message: "Welcome to the Social Media API" });
     })
 
-    app.use("{/*demo}",(req:Request,res:Response,next:NextFunction)=>{
-        throw new AppError(`The route ${req.originalUrl} does not exist, Method ${req.method} is not supported`,404);
+    app.use("{/*demo}", (req: Request, res: Response, next: NextFunction) => {
+        throw new AppError(`The route ${req.originalUrl} does not exist, Method ${req.method} is not supported`, 404);
     })
 
 
     app.use(global_error_handeller);
 
-    app.listen(port, () => {
+    const httpServer = app.listen(port, () => {
         console.log(`Server is running on port ${port}`);
     });
+
+    const io = new Server(
+        httpServer,
+        {
+            cors: {
+                origin: "*"
+            }
+        }
+    )
+
+    io.on(
+        "connection",
+        (socket) => {
+            console.log({ Id: socket.id });
+
+            socket.on(
+                "eventName",
+                (data, cb) => {
+                    console.log({ data })
+                    
+                    cb("welcome in our backend");
+                })
+        }
+    )
+
+
 }
 
 export default bootstrap;

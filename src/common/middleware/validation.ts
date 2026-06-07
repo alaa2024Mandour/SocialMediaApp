@@ -1,6 +1,8 @@
+import { GraphQLEnumType, GraphQLError } from 'graphql';
 import { NextFunction, Request, Response } from "express";
 import { ZodType } from "zod";
 import { AppError } from "../utils/global.error.handeller";
+import { error } from 'node:console';
 
 type reqType = keyof Request
 type schemaType = Partial<Record<reqType, ZodType>>
@@ -37,6 +39,34 @@ const validationMid = (schema: schemaType) => {
         }
         next()
     }
+}
+export const validationMid_graphql = (schema: ZodType, data:any) => {
+        let errorsResult = []
+        const result = schema.safeParse(data)
+
+            if (!result.success) {
+                errorsResult.push({
+                    errors: result.error.issues.map((issue) => ({
+                        path: issue.path[0],
+                        message: issue.message,
+                    }))
+                })
+            }
+
+            if(errorsResult.length){
+                throw new GraphQLError(
+                    "validation error",
+                    {
+                        extensions:{
+                            code:"BAD_REQUEST",
+                            status:400,
+                            message:"there is some validation errors",
+                            error:errorsResult
+                        }
+                    }
+                )
+                
+            }
 }
 
 export default validationMid;
