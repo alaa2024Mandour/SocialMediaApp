@@ -11,7 +11,16 @@ class UserService {
 
     getProfile = async (req:Request,res:Response,next:NextFunction) => {
         const {_id} = req.user!;
-        const user = await this._userModel.findById({id:_id});
+        const user = await this._userModel.findById({
+            id:_id,
+            options:{
+                populate:[
+                    {
+                        path:"friends"
+                    }
+                ]
+            }
+        });
         res.status(200).json({message:"user profile",user})
     }
 

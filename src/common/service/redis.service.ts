@@ -153,6 +153,28 @@ class RedisService{
     async removeFCMUser (userId:Types.ObjectId){
         return await this.client.del(this.key(userId))
     }
+
+
+    // -------------socketIo Caching----------------
+
+    socketIoKey (userId:Types.ObjectId){
+        return `user:socketIo:${userId}`
+    }
+    async addSocketIo (userId:Types.ObjectId,SocketIoId:string){
+        return await this.client.sAdd(this.socketIoKey(userId),SocketIoId)
+    }
+    async removeSocketIo (userId:Types.ObjectId,SocketIoId:string){
+        return await this.client.sRem(this.socketIoKey(userId),SocketIoId)
+    }
+    async getSocketIos (userId:Types.ObjectId){
+        return await this.client.sMembers(this.socketIoKey(userId))
+    }
+    async hasSocketIos (userId:Types.ObjectId){
+        return await this.client.sCard(this.socketIoKey(userId))
+    }
+    async removeSocketIoUser (userId:Types.ObjectId){
+        return await this.client.del(this.socketIoKey(userId))
+    }
 }
 
 export default new RedisService()

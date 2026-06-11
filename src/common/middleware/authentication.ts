@@ -19,7 +19,7 @@ declare global {
 }
 
 
-const checkUser = async (authorization:string) => {
+export const checkUser = async (authorization:string) => {
 
     const userDBService = new UserRepository();
 

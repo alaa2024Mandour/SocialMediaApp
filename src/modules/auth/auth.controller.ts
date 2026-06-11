@@ -3,9 +3,10 @@ import authService from "./auth.service";
 import validationMid from "../../common/middleware/validation";
 import { 
     confirmEmail_schema, resendEmail_schema, signInSchema, signUpSchema } from "./auth.validation";
+import chatRouter from "../chat/chat.controller";
 
 const authRouter = Router()
-
+authRouter.use("/:userId/chat",chatRouter)
 authRouter.post("/signUp", validationMid(signUpSchema),authService.signUp)
 authRouter.post("/signIn", validationMid(signInSchema),authService.signIn)
 authRouter.post("/confirm_email", validationMid(confirmEmail_schema),authService.confirmEmail)

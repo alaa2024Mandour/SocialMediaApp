@@ -6,7 +6,7 @@ export const success_response = ({
     data = undefined
 }:
 {
-    res:Response,
+    res:Response|any,
     status? :number,
     message? :string,
     data ?:any|undefined

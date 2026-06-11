@@ -21,8 +21,11 @@ import UserRepository from './DB/repositories/user.repository';
 import postRouter from './modules/posts/post.controller';
 import { createHandler } from 'graphql-http/lib/use/express';
 import { gql_schema } from './modules/graphql/grapgql.schema';
-import authMiddleware from './common/middleware/authentication';
+import authMiddleware, { checkUser } from './common/middleware/authentication';
 import { Server } from 'socket.io';
+import { string } from 'zod';
+import redisService from './common/service/redis.service';
+import socketGateway from './modules/realTime/socket.gateway';
 const app: Application = express();
 const port: number = PORT;
 
@@ -86,29 +89,7 @@ const bootstrap = () => {
         console.log(`Server is running on port ${port}`);
     });
 
-    const io = new Server(
-        httpServer,
-        {
-            cors: {
-                origin: "*"
-            }
-        }
-    )
-
-    io.on(
-        "connection",
-        (socket) => {
-            console.log({ Id: socket.id });
-
-            socket.on(
-                "eventName",
-                (data, cb) => {
-                    console.log({ data })
-                    
-                    cb("welcome in our backend");
-                })
-        }
-    )
+    socketGateway.initIo(httpServer)
 
 
 }
