@@ -1,4 +1,4 @@
-import { Socket } from "socket.io";
+import { Server, Socket } from "socket.io";
 import chatService from "../chat.service";
 import { chatEventsNamesEnum } from "../events.names.enum";
 
@@ -11,9 +11,15 @@ class ChatEvents{
         })
     }
 
-    sendMessage=(socket:Socket)=>{
+    sendMessage= async (socket:Socket,io:Server)=>{
         socket.on(chatEventsNamesEnum.sendMessage,(data)=>{
-            chatService.sendMessage(data)
+            chatService.sendMessage(data,socket,io)
+        })
+    }
+
+    joinRoom= async (socket:Socket,io:Server)=>{
+        socket.on(chatEventsNamesEnum.joinRoom,(data)=>{
+            chatService.sendMessage(data,socket,io)
         })
     }
 }

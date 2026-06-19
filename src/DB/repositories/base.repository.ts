@@ -1,4 +1,4 @@
-import { PopulateOptions, QueryFilter, QueryOptions } from "mongoose";
+import { PopulateOptions, QueryFilter, QueryOptions, UpdateQuery } from "mongoose";
 import { Types } from "mongoose";
 import { ProjectionType } from "mongoose";
 import { HydratedDocument, Model } from "mongoose";
@@ -22,6 +22,11 @@ export abstract class BaseRepository<TDocument> {
                 options?: QueryOptions<TDocument>
             }): Promise<HydratedDocument<TDocument> | null> {
         return this.model.findById(id, projection, options)
+            .select(options?.select)
+            .sort(options?.sort)
+            .skip(options?.skip!)
+            .limit(options?.limit!)
+            .populate(options?.populate as PopulateOptions)
     }
 
     async findOne(
@@ -63,7 +68,7 @@ export abstract class BaseRepository<TDocument> {
         }:
             {
                 filter: any,
-                updateData: Partial<TDocument>,
+                updateData: UpdateQuery<TDocument>,
                 projection?: ProjectionType<TDocument>,
                 options?: QueryOptions<TDocument>
             }): Promise<HydratedDocument<TDocument> | null> {

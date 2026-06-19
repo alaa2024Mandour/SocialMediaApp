@@ -1,12 +1,13 @@
-import { Socket } from "socket.io";
+import { Server, Socket } from "socket.io";
 import chatEvents from "./chat.events";
 
 class ChatGateway{
     constructor(){}
 
-    registerEvent=(socket:Socket)=>{
+    registerEvent= async (socket:Socket,io:Server)=>{
         chatEvents.sayHiEvent(socket)
-        chatEvents.sendMessage(socket)
+        chatEvents.sendMessage(socket,io)
+        chatEvents.joinRoom(socket,io)
     }
 }
 

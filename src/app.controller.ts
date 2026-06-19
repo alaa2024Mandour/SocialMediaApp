@@ -26,6 +26,8 @@ import { Server } from 'socket.io';
 import { string } from 'zod';
 import redisService from './common/service/redis.service';
 import socketGateway from './modules/realTime/socket.gateway';
+import friendshipRouter from './modules/friendship/friendship.controller';
+import chatRouter from './modules/chat/chat.controller';
 const app: Application = express();
 const port: number = PORT;
 
@@ -51,6 +53,8 @@ const bootstrap = () => {
     app.use("/auth", authRouter)
     app.use("/users", userRouter)
     app.use("/posts", postRouter)
+    app.use("/friendship", friendshipRouter)
+    app.use("/chat", chatRouter)
 
     app.use("/graphql", createHandler({ schema: gql_schema, context: (req) => ({ req }) }))
 

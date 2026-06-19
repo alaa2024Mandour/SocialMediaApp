@@ -17,8 +17,8 @@ class SocketGateway{
     )
     io.use(async (socket, next) => {
         try {
-            console.log(socket.handshake.auth.token);
-            const { user } = await checkUser(socket.handshake.auth.token)
+            const token = socket.handshake.auth.authorization ||socket.handshake.headers.authorization ;
+            const { user } = await checkUser(token)            
             socket.data.user = user
             next()
         } catch (error:any) {
@@ -29,12 +29,10 @@ class SocketGateway{
     io.on(
         "connection",
         async (socket) => {
-
             const userId = socket.data.user._id;
             const socketId = socket.id
-            console.log(socketId);
             
-            await chatGateway.registerEvent(socket)
+            await chatGateway.registerEvent(socket,io)
 
             await redisService.addSocketIo(userId,socketId)
 
@@ -46,7 +44,6 @@ class SocketGateway{
             })
 
             
-
             socket.on(
                 "eventName",
                 (data, /*cb*/) => {

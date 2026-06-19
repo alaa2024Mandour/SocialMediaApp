@@ -1,4 +1,5 @@
 export enum chatEventsNamesEnum{
     "sayHi"="sayHi",
-    "sendMessage"="sendMessage"
+    "sendMessage"="sendMessage",
+    "joinRoom"="join_room",
 }

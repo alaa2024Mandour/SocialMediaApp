@@ -12,8 +12,8 @@ export interface IChat {
     messages: IMessage[],
 
     //OVM
-    groupId: string,
-    groupname: string,
+    roomId: string,
+    groupName: string,
     groupImage: string,
 }
 
@@ -50,9 +50,9 @@ const ChatSchema = new mongoose.Schema<IChat>({
             ref: "User"
         }
     ],
-    groupId: String,
+    roomId: String,
     groupImage: String,
-    groupname: String,
+    groupName: String,
 },
     {
     timestamps: true,

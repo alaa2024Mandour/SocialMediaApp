@@ -4,10 +4,13 @@ import { success_response } from "../../common/utils/successRes";
 import { S3Service } from "../../common/service/s3.service";
 import { pipeline } from "node:stream/promises";
 import { AppError } from "../../common/utils/global.error.handeller";
+import chatService from "../chat/chat.service";
+import ChatRepository from "../../DB/repositories/chat.repository";
 
 class UserService {
     private readonly _userModel = new userRepository();
     private readonly _s3Service = new S3Service();
+    private readonly _chatModel = new ChatRepository();
 
     getProfile = async (req:Request,res:Response,next:NextFunction) => {
         const {_id} = req.user!;
@@ -21,7 +24,14 @@ class UserService {
                 ]
             }
         });
-        res.status(200).json({message:"user profile",user})
+
+        const groups = await this._chatModel.find({
+            filter:{
+                participants:{$in: req.user?._id},
+                groupName:{$exist:true}
+            }
+        })
+        res.status(200).json({message:"user profile",user,groups})
     }
 
     uploadAttachment=async (req:Request,res:Response,next:NextFunction) => {
