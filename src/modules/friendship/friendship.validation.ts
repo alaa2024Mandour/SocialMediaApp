@@ -16,3 +16,9 @@ export const processFriendRequestSchema = {
         status: z.enum(FriendRequestStatusEnum),
     }),
 }
+
+export const objectIdSchema = {
+    params: z.object({
+        id: general_rules.id,
+    }),
+}

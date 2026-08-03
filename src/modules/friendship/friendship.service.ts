@@ -1,4 +1,4 @@
-import { ObjectId, Types } from 'mongoose';
+import mongoose, {  Types } from 'mongoose';
 import { NextFunction, Request, Response } from "express";
 import FriendshipRepository from "../../DB/repositories/friendship.repository";
 import notificationService from "../../common/service/notification.service";
@@ -7,10 +7,11 @@ import UserRepository from "../../DB/repositories/user.repository";
 import { AppError } from "../../common/utils/global.error.handeller";
 import redisService from '../../common/service/redis.service';
 import { success_response } from '../../common/utils/successRes';
-import { processFriendRequestBodyDTO, processFriendRequestParamsDTO, sendFriendRequestDTO } from './friendship.dto';
+import { objectIdParamsDTO, processFriendRequestBodyDTO, processFriendRequestParamsDTO, sendFriendRequestDTO } from './friendship.dto';
 import { FriendRequestStatusEnum } from '../../common/enum/friendship.enum';
 import notificationDataService from '../../common/service/notification.data.service';
-import { populate } from 'dotenv';
+
+import { Connection } from 'mongoose';
 
 class FriendshipService {
     constructor() { }
@@ -19,15 +20,16 @@ class FriendshipService {
     private readonly _userModel = new UserRepository();
     private readonly _notificationService = notificationService;
     private readonly _redisService = redisService;
+    private readonly _connection: Connection = mongoose.connection;
 
     sendFriendRequest = async (req: Request, res: Response, next: NextFunction) => {
         const { to } = req.params as sendFriendRequestDTO;
         const toId = new Types.ObjectId(to);
-        const userId = new Types.ObjectId(req.user?._id)
+        const userId = req.user?._id
 
-        if (toId! == userId) {
+
+        if (toId.toString() == userId!.toString()) {
             throw new AppError("you can't send friend request to your self");
-
         }
         const userExist = await this._userModel.findById({ id: toId });
         if (!userExist) {
@@ -47,7 +49,7 @@ class FriendshipService {
             throw new AppError("friendRequest already exist");
         }
 
-        const areFriends = await this._friendRequestModel.findOne({
+        const areFriends = await this._friendshipModel.findOne({
             filter: {
                 $or: [
                     { userA: toId, userB: userId },
@@ -60,11 +62,11 @@ class FriendshipService {
             throw new AppError("you are already friends");
         }
 
-        const data = await this._friendRequestModel.create({ to: toId, from: userId })
+        await this._friendRequestModel.create({ to: toId!, from: userId! })
 
         const fcmToken = await this._redisService.getFCMs(toId)
         await this._notificationService.sendNotifications({
-            userId,
+            userId: userId!,
             tokens: fcmToken,
             data: notificationDataService.receiveFriendRequest(req.user?.firstName)
         })
@@ -88,44 +90,18 @@ class FriendshipService {
             },
         )
 
-
         if (!request) {
             throw new AppError("Request Not Exist");
         }
-
-        console.log("=== DEBUG FRIEND REQUEST ===");
-        console.log("Full Request Object:", request);
-        console.log("request.to Type:", typeof request.to, "Value:", request.to?.toString());
-        console.log("req.user._id Type:", typeof req.user?._id, "Value:", req.user?._id?.toString());
-        console.log("============================");
 
         if (request.to.toString() !== req.user!._id.toString()) {
             throw new AppError("not authorized");
         }
 
-
-
-
         request.status = status;
         await request.save()
 
-        await this._userModel.findOneAndUpdate({
-            filter:{_id:request.from._id},
-            updateData:{
-                $push:{
-                    friends : req.user?._id 
-                }
-            }
-        })
 
-        await this._userModel.findOneAndUpdate({
-            filter:{_id:req.user?._id },
-            updateData:{
-                $push:{
-                    friends : request.from._id 
-                }
-            }
-        })
         let friendship;
         if (status == FriendRequestStatusEnum.accepted) {
             friendship = await this._friendshipModel.create(
@@ -135,11 +111,29 @@ class FriendshipService {
                 },
             )
 
+            await this._userModel.findOneAndUpdate({
+                filter: { _id: request.from._id },
+                updateData: {
+                    $push: {
+                        friends: req.user?._id
+                    }
+                }
+            })
+
+            await this._userModel.findOneAndUpdate({
+                filter: { _id: req.user?._id },
+                updateData: {
+                    $push: {
+                        friends: request.from._id
+                    }
+                }
+            })
+
             const senderFcmTokens = await this._redisService.getFCMs(request.from._id);
             await this._notificationService.sendNotifications({
                 userId: request.from as Types.ObjectId,
                 tokens: senderFcmTokens,
-                data: notificationDataService.acceptFriendRequest(request.from?.firstName! )
+                data: notificationDataService.acceptFriendRequest((request.from as any).firstName!)
             })
 
 
@@ -147,13 +141,103 @@ class FriendshipService {
             await this._notificationService.sendNotifications({
                 userId: request.from as Types.ObjectId,
                 tokens: receiverFcmTokens,
-                data: notificationDataService.confirmFriendRequest(req.user?.firstName )
+                data: notificationDataService.confirmFriendRequest(req.user?.firstName)
             })
-        } 
+        }
 
         await request.deleteOne()
 
-        success_response({ res, message: "you are friends now" })
+        success_response({ res, message: friendship ? "you are friends now" : "friend request deleted successfully" })
+    }
+
+    getReceivedRequests = async (req: Request, res: Response, next: NextFunction) => {
+        const friendRequests = await this._friendRequestModel.find({
+            filter: {
+                to: req.user?._id,
+                status: FriendRequestStatusEnum.pending
+            }
+        })
+
+        success_response({ res, data: friendRequests })
+    }
+
+    getSentRequests = async (req: Request, res: Response, next: NextFunction) => {
+        const friendRequests = await this._friendRequestModel.find({
+            filter: {
+                from: req.user?._id,
+                status: FriendRequestStatusEnum.pending
+            }
+        })
+
+        success_response({ res, data: friendRequests })
+    }
+
+    removeFriend = async (req: Request, res: Response, next: NextFunction) => {
+        const  targetId  = req.params.id as unknown as objectIdParamsDTO 
+
+        if (targetId.toString() == req.user!._id.toString()) {
+            throw new AppError("you can't remove your self");
+        }
+        const friendShip = await this._friendshipModel.findOne({
+            filter: {
+                $or: [
+                    { userA: new Types.ObjectId(targetId?.toString()), userB: req.user!._id },
+                    { userB: new Types.ObjectId(targetId?.toString()), userA: req.user!._id },
+                ]
+            }
+        })
+
+        if (!friendShip) {
+            throw new AppError("you are not friends")
+        }
+
+        const session = await this._connection.startSession()
+        session.startTransaction()
+        try {
+            await friendShip.deleteOne({ session })
+            await this._userModel.findOneAndUpdate({
+                filter: { _id: req.user!._id },
+                updateData: {
+                    $pull: {
+                        friends: new Types.ObjectId(targetId?.toString())
+                    }
+                },
+                options: { session }
+            })
+            await this._userModel.findOneAndUpdate({
+                filter: { _id: new Types.ObjectId(targetId?.toString()) },
+                updateData: {
+                    $pull: {
+                        friends: req.user!._id
+                    }
+                },
+                options: { session }
+            })
+            await session.commitTransaction()
+            success_response({ res, message: "deleted successfully" })
+        } catch (error) {
+            await session.abortTransaction()
+            throw new AppError("Server Error")
+        }
+        finally { session.endSession(); }
+    }
+
+    cancelRequest = async (req: Request, res: Response, next: NextFunction) => {
+        const requestId = req.params.id as unknown as objectIdParamsDTO 
+
+        const requestCanceled = await this._friendRequestModel.findOne({
+            filter:{
+                _id : new Types.ObjectId(requestId.toString()),
+                from:req.user!._id
+            }
+        })
+
+        if(!requestCanceled){
+            throw new AppError("request not exist")
+        }
+
+        await requestCanceled.deleteOne()
+        success_response({res,message:"your request canceled"})
     }
 }
 
