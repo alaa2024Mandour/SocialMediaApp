@@ -36,7 +36,7 @@ class CommentService {
             doc = await this._postModel.findOne({
                 filter: {
                     _id: postId,
-                    $or: [...postAvailability(req)],
+                    $or: [... await postAvailability(req)],
                     allowComments: AllowComments_Enum.allow
                 }
             })
@@ -53,7 +53,7 @@ class CommentService {
                         {
                             path: "refId",
                             match: {
-                                $or: [...postAvailability(req)],
+                                $or: [...await postAvailability(req)],
                                 allowComments: AllowComments_Enum.allow
                             }
                         }
@@ -128,6 +128,7 @@ class CommentService {
         return success_response({ res, data: comment })
     }
 
+    
 
 }
 

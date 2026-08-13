@@ -75,7 +75,7 @@ class PostService {
 
         if (fcmTokens?.length) {
             await this._notificationService.sendNotifications({
-                userId:req.user!._id,
+                userId: req.user!._id,
                 tokens: fcmTokens,
                 data: {
                     title: `${req?.user?.firstName} mention you on a new Post `,
@@ -88,108 +88,69 @@ class PostService {
     }
 
     getPosts = async (req: Request, res: Response, next: NextFunction) => {
-        // const posts = await this._postModel.paginate(
-        //     {
-        //         page: +req.query.page!,
-        //         limit: +req.query.limit!,
-        //         search: {
-                    
-        //             ...(req.query.search ? {
-        //                 $or: [
-        //                     { content: { $regex: req.query.search, $options: "i" } },
-        //                     ...postAvailability(req),
-        //                 ]
-        //             } : {})
-        //         }
-        //     }
-        // )
+        const availability = await postAvailability(req);
 
-        const posts = await this._postModel.find({
-            filter:{
-                $or:[
-                    ...postAvailability(req),
-                ]
-            },
-            options:{
-                populate:[
-                    {
-                        path:"comments",
-                        match:{
-                            commentId:{$exists:false}
-                        },
-                        populate:{
-                            path:"replies"
-                        }
-                    }
-                ]
+    const search: any = {
+        $or: availability,
+    };
+
+    if (req.query.search) {
+        search.content = {
+            $regex: req.query.search,
+            $options: "i"
+        };
+    }
+
+    const posts = await this._postModel.paginate({
+        page: +req.query.page!,
+        limit: +req.query.limit!,
+        search,
+        populate: [
+            {
+                path: "comments",
+                match: {
+                    commentId: { $exists: false }
+                },
+                populate: {
+                    path: "replies"
+                }
             }
-        })
+        ]
+    });
 
         return success_response({ res, data: posts })
     }
 
-
-    likePost = async (req: Request, res: Response, next: NextFunction) => {
-        const { postId }: likePostDTO = req.params as likePostDTO
-        let post = await this._postModel.findOne({
-            filter: {
-                _id: postId,
-                ...postAvailability(req)
-            }
-        })
-        if (!post) throw new AppError("post not found or you not authorized...");
-
-        let updateQuery: any;
-        if (!post.likes.includes(req.user?._id!)) {
-            updateQuery = {
-                $addToSet: { likes: req.user?._id }
-            }
-        } else {
-            updateQuery = {
-                $pull: { likes: req.user?._id }
-            }
-        }
-        post = await this._postModel.findOneAndUpdate({
-            filter: {
-                _id: postId,
-            },
-            updateData: updateQuery
-        }
-        )
-        return success_response({ res, data: post })
-    }
-
-
     updatePost = async (req: Request, res: Response, next: NextFunction) => {
         const { allowComments, content, attachments, removeAttachments, tags, removeTags, availability }: updatePostDTO = req.body
-        const {postId} = req.params
+        const { postId } = req.params
         const post = await this._postModel.findOne({
-            filter:{
-                _id:postId,
-                createdBy:req.user?._id
+            filter: {
+                _id: postId,
+                createdBy: req.user?._id
             }
         })
 
-        if(!post) throw new AppError("you can't update this post");
-        
-        if(removeAttachments?.length){
-            const isNotValidFiles = removeAttachments.filter((file)=>{
+        if (!post) throw new AppError("you can't update this post");
+
+        if (removeAttachments?.length) {
+            const isNotValidFiles = removeAttachments.filter((file) => {
                 return !post.attachments.includes(file)
             })
 
-            if(isNotValidFiles.length){
+            if (isNotValidFiles.length) {
                 throw new AppError("invalid files, files not exist to delete it");
-            }else{
+            } else {
                 await this._s3Service.deleteFiles(removeAttachments)
             }
 
-            post.attachments = post.attachments.filter((file)=>{
+            post.attachments = post.attachments.filter((file) => {
                 return !removeAttachments.includes(file)
             }) as string[]
         }
 
-        const updateTags = new Set(post.tags?.map(id=>id.toString()))
-        removeTags?.forEach((tag)=>{
+        const updateTags = new Set(post.tags?.map(id => id.toString()))
+        removeTags?.forEach((tag) => {
             return updateTags.delete(tag)
         })
 
@@ -214,7 +175,7 @@ class PostService {
                 })
             }
         }
-        post.tags = [...updateTags].map((tag)=>{
+        post.tags = [...updateTags].map((tag) => {
             return new Types.ObjectId(tag)
         })
 
@@ -229,7 +190,7 @@ class PostService {
 
         if (fcmTokens?.length) {
             await this._notificationService.sendNotifications({
-                userId:req.user!._id,
+                userId: req.user!._id,
                 tokens: fcmTokens,
                 data: {
                     title: `${req?.user?.firstName} mention you on a new Post `,
@@ -238,12 +199,12 @@ class PostService {
             })
         }
 
-        if(content) post.content = content;
-        if(availability) post.availability = availability;
-        if(allowComments) post.allowComments = allowComments;
+        if (content) post.content = content;
+        if (availability) post.availability = availability;
+        if (allowComments) post.allowComments = allowComments;
 
         post.save()
-        return success_response({res,data:post})
+        return success_response({ res, data: post })
     }
 
 }

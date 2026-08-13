@@ -29,13 +29,7 @@ postRouter.get(
     authMiddleware,
     postService.getPosts)
 
-postRouter.patch(
-    "/likePosts/:postId", 
-    validationMid(likePostSchema),
-    authMiddleware,
-    postService.likePost)
-
-    postRouter.put(
+postRouter.put(
     "/updatePost/:postId", 
     multerCloud({storage_type:StorageEnum.memory,file_type:[...MimeEnum.images,...MimeEnum.videos]}).array("attachments"),
     (req: Request, res: Response, next: NextFunction) => {

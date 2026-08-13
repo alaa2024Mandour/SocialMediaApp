@@ -21,13 +21,10 @@ import UserRepository from './DB/repositories/user.repository';
 import postRouter from './modules/posts/post.controller';
 import { createHandler } from 'graphql-http/lib/use/express';
 import { gql_schema } from './modules/graphql/grapgql.schema';
-import authMiddleware, { checkUser } from './common/middleware/authentication';
-import { Server } from 'socket.io';
-import { string } from 'zod';
-import redisService from './common/service/redis.service';
 import socketGateway from './modules/realTime/socket.gateway';
 import friendshipRouter from './modules/friendship/friendship.controller';
 import chatRouter from './modules/chat/chat.controller';
+import reactRouter from './modules/reacts/react.controller';
 const app: Application = express();
 const port: number = PORT;
 
@@ -55,6 +52,7 @@ const bootstrap = () => {
     app.use("/posts", postRouter)
     app.use("/friendship", friendshipRouter)
     app.use("/chat", chatRouter)
+    app.use("/react", reactRouter)
 
     app.use("/graphql", createHandler({ schema: gql_schema, context: (req) => ({ req }) }))
 
