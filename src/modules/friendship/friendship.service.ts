@@ -1,4 +1,4 @@
-import mongoose, {  Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import { NextFunction, Request, Response } from "express";
 import FriendshipRepository from "../../DB/repositories/friendship.repository";
 import notificationService from "../../common/service/notification.service";
@@ -111,24 +111,6 @@ class FriendshipService {
                 },
             )
 
-            await this._userModel.findOneAndUpdate({
-                filter: { _id: request.from._id },
-                updateData: {
-                    $push: {
-                        friends: req.user?._id
-                    }
-                }
-            })
-
-            await this._userModel.findOneAndUpdate({
-                filter: { _id: req.user?._id },
-                updateData: {
-                    $push: {
-                        friends: request.from._id
-                    }
-                }
-            })
-
             const senderFcmTokens = await this._redisService.getFCMs(request.from._id);
             await this._notificationService.sendNotifications({
                 userId: request.from as Types.ObjectId,
@@ -173,71 +155,43 @@ class FriendshipService {
     }
 
     removeFriend = async (req: Request, res: Response, next: NextFunction) => {
-        const  targetId  = req.params.id as unknown as objectIdParamsDTO 
+        const targetId = req.params.id as unknown as objectIdParamsDTO
 
         if (targetId.toString() == req.user!._id.toString()) {
             throw new AppError("you can't remove your self");
         }
-        const friendShip = await this._friendshipModel.findOne({
+        const friendShip = await this._friendshipModel.findOneAndDelete({
             filter: {
                 $or: [
-                    { userA: new Types.ObjectId(targetId?.toString()), userB: req.user!._id },
-                    { userB: new Types.ObjectId(targetId?.toString()), userA: req.user!._id },
+                    { userA: new Types.ObjectId(targetId.toString()), userB: req.user!._id },
+                    { userB: new Types.ObjectId(targetId.toString()), userA: req.user!._id },
                 ]
             }
-        })
+        });
 
         if (!friendShip) {
-            throw new AppError("you are not friends")
+            throw new AppError("you are not friends");
         }
 
-        const session = await this._connection.startSession()
-        session.startTransaction()
-        try {
-            await friendShip.deleteOne({ session })
-            await this._userModel.findOneAndUpdate({
-                filter: { _id: req.user!._id },
-                updateData: {
-                    $pull: {
-                        friends: new Types.ObjectId(targetId?.toString())
-                    }
-                },
-                options: { session }
-            })
-            await this._userModel.findOneAndUpdate({
-                filter: { _id: new Types.ObjectId(targetId?.toString()) },
-                updateData: {
-                    $pull: {
-                        friends: req.user!._id
-                    }
-                },
-                options: { session }
-            })
-            await session.commitTransaction()
-            success_response({ res, message: "deleted successfully" })
-        } catch (error) {
-            await session.abortTransaction()
-            throw new AppError("Server Error")
-        }
-        finally { session.endSession(); }
+        return success_response({ res, message: "deleted successfully" });
     }
 
     cancelRequest = async (req: Request, res: Response, next: NextFunction) => {
-        const requestId = req.params.id as unknown as objectIdParamsDTO 
+        const requestId = req.params.id as unknown as objectIdParamsDTO
 
         const requestCanceled = await this._friendRequestModel.findOne({
-            filter:{
-                _id : new Types.ObjectId(requestId.toString()),
-                from:req.user!._id
+            filter: {
+                _id: new Types.ObjectId(requestId.toString()),
+                from: req.user!._id
             }
         })
 
-        if(!requestCanceled){
+        if (!requestCanceled) {
             throw new AppError("request not exist")
         }
 
         await requestCanceled.deleteOne()
-        success_response({res,message:"your request canceled"})
+        success_response({ res, message: "your request canceled" })
     }
 }
 
