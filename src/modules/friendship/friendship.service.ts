@@ -1,4 +1,4 @@
-import mongoose, { Types } from 'mongoose';
+import { Types } from 'mongoose';
 import { NextFunction, Request, Response } from "express";
 import FriendshipRepository from "../../DB/repositories/friendship.repository";
 import notificationService from "../../common/service/notification.service";
@@ -11,8 +11,6 @@ import { objectIdParamsDTO, processFriendRequestBodyDTO, processFriendRequestPar
 import { FriendRequestStatusEnum } from '../../common/enum/friendship.enum';
 import notificationDataService from '../../common/service/notification.data.service';
 
-import { Connection } from 'mongoose';
-
 class FriendshipService {
     constructor() { }
     private readonly _friendshipModel = new FriendshipRepository();
@@ -20,7 +18,6 @@ class FriendshipService {
     private readonly _userModel = new UserRepository();
     private readonly _notificationService = notificationService;
     private readonly _redisService = redisService;
-    private readonly _connection: Connection = mongoose.connection;
 
     sendFriendRequest = async (req: Request, res: Response, next: NextFunction) => {
         const { to } = req.params as sendFriendRequestDTO;

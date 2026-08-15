@@ -6,7 +6,6 @@ export interface IPost {
     _id: Types.ObjectId,
     content:string,
     attachments:string[],
-    likes:Types.ObjectId[],
     tags:Types.ObjectId[],
     allowComments:AllowComments_Enum,
     availability:Availability_Enum,
@@ -23,7 +22,6 @@ const PostSchema = new Schema<IPost>({
         }
     },
     attachments:[String],
-    likes:[{type:Types.ObjectId,ref:"User"}],
     tags:[{type:Types.ObjectId,ref:"User"}],
     allowComments:{
         type:String,

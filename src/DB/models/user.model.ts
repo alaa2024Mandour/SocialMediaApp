@@ -15,7 +15,6 @@ export interface IUser {
     role?: RoleEnum,
     provider: ProviderEnum,
     profilePic?: String,
-    friends:Types.ObjectId[],
     confirmed?: Boolean,
     deletedAt?: Date,
     createdAt: Date,
@@ -78,7 +77,6 @@ const userSchema = new Schema<IUser>({
         type: Boolean, 
         default: false 
     },
-    friends:[{type:Types.ObjectId,ref:"User"}],
     deletedAt:Date
 }, {
     timestamps: true,

@@ -9,11 +9,12 @@ import { success_response } from "../../common/utils/successRes";
 import RedisService from '../../common/service/redis.service';
 import { uuidv4 } from 'zod';
 import { S3Service } from '../../common/service/s3.service';
+import FriendshipRepository from '../../DB/repositories/friendship.repository';
 
 class ChatService {
     constructor() { }
     private readonly _chatModel = new ChatRepository();
-    private readonly _userModel = new UserRepository();
+    private readonly _friendShipModel = new FriendshipRepository();
     private readonly _redisService = RedisService;
     private readonly _s3Service = new S3Service();
 
@@ -64,7 +65,7 @@ class ChatService {
 
         const chat = await this._chatModel.findOne({
             filter: {
-                _id:groupId,
+                _id: groupId,
                 participants: {
                     $in: [req.user?._id],
                 },
@@ -92,22 +93,24 @@ class ChatService {
     createGroup = async (req: Request, res: Response) => {
         let { groupName, groupImage, participants } = req.body;
         const createdBy = req.user?._id!;
-        console.log({createdBy});
-        
+        console.log({ createdBy });
+
         console.log(participants);
         const participantsObjectId = participants.map((participant: string) => new Types.ObjectId(participant));
         console.log(participantsObjectId);
-        
-        const users = await this._userModel.find({
+
+        const users = await this._friendShipModel.find({
             filter: {
-                _id: { $in: participantsObjectId },
-                friends: { $in: [createdBy] }
+                $or: [
+                    { userA: { $in: participantsObjectId }, userB: createdBy },
+                    { userB: { $in: participantsObjectId }, userA: createdBy },
+                ]
             },
         })
 
         console.log(users.length);
         console.log(participants.length);
-        
+
         if (users.length !== participants.length) {
             throw new Error("some users not found");
         }
@@ -169,7 +172,14 @@ class ChatService {
         const { sendTo, content } = data;
         const createdBy = socket.data.user._id
 
-        const userExist = await this._userModel.findById({ id: sendTo });
+        const userExist = await this._friendShipModel.findOne({
+            filter: {
+                $or: [
+                    { userA: sendTo, userB: createdBy },
+                    { userA: createdBy, userB: sendTo },
+                ]
+            }
+        });
         if (!userExist) {
             throw new AppError("user not exist");
         }
@@ -213,7 +223,7 @@ class ChatService {
 
         const chat = await this._chatModel.findOneAndUpdate({
             filter: {
-                _id:groupId,
+                _id: groupId,
                 participants: { $all: [createdBy] },
                 group: { $exists: false }
             },
@@ -228,11 +238,11 @@ class ChatService {
         })
 
         if (!chat) {
-            throw new AppError("chat not found",404);
+            throw new AppError("chat not found", 404);
         }
 
         io.to(await this._redisService.getSocketIos(createdBy)).emit("successMessage", { content });
-        io.to(chat.roomId).emit("newMessage", { content, from: socket.data.user , groupId:chat._id});
+        io.to(chat.roomId).emit("newMessage", { content, from: socket.data.user, groupId: chat._id });
     }
 
 
