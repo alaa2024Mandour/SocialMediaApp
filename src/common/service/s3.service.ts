@@ -200,7 +200,6 @@ export class S3Service {
          * existence so we can return a 404 error to the client if the file is missing.
          */
         const isExist = await this.checkFileExists(Key)
-        console.log(isExist);
         
         if(!isExist) throw new AppError("file not exist or already deleted");
         

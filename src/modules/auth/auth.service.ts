@@ -106,11 +106,12 @@ class AuthService {
         const { email, password, fcm } = req.body
         const user = await this._userModel.findOne({
             filter: {
-                email
+                email,
+                confirmed:true
             }
         });
         if (!user || !Compare({ plainText: String(password), cipherText: String(user.password) })) {
-            throw new AppError("invalid email or password", 400)
+            throw new AppError("invalid confirmed email or password", 400)
         }
 
         const randomID = uuidv4();

@@ -35,12 +35,9 @@ class SocketGateway{
             await chatGateway.registerEvent(socket,io)
 
             await redisService.addSocketIo(userId,socketId)
-
-            console.log({userSockets:await redisService.getSocketIos(userId)});
             
             socket.on("disconnect",async () => {
                 await redisService.removeSocketIo(userId,socketId)
-                console.log({userSockets:await redisService.getSocketIos(userId)});
             })
 
             

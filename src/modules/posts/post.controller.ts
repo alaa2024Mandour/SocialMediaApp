@@ -14,12 +14,6 @@ postRouter.use("/:postId/comments{/:commentId/reply}",commentRouter)
 postRouter.post(
     "/createPost", 
     multerCloud({storage_type:StorageEnum.memory,file_type:[...MimeEnum.images,...MimeEnum.videos]}).array("attachments"),
-    (req: Request, res: Response, next: NextFunction) => {
-        console.log("------------postMid---------");
-        
-        console.log(req?.files);
-        next();
-    },
     validationMid(createPostSchema),
     authMiddleware,
     postService.createPost)

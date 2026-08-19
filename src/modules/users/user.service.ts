@@ -42,7 +42,7 @@ class UserService {
 
         const groups = await this._chatModel.find({
             filter: {
-                participants: { $in: req.user?._id },
+                participants: req.user?._id,
                 groupName: { $exists: true }
             }
         })

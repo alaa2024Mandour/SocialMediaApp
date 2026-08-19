@@ -13,14 +13,6 @@ const validationMid = (schema: schemaType) => {
         
         for (const key of Object.keys(schema) as reqType[]) {
             if (!schema[key]) continue;
-            // if (req?.file) {
-            // req.body.attachment = req.file
-            // }
-            // if (req?.files) {
-            //     req.body.attachments = req.files
-            // }
-            // console.log("-----check validation-----");
-            // console.log(req.body.attachments);
 
             const result = schema[key].safeParse(req[key])
 

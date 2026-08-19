@@ -7,7 +7,7 @@ import UserRepository from "../../DB/repositories/user.repository";
 import { AppError } from "../../common/utils/global.error.handeller";
 import { success_response } from "../../common/utils/successRes";
 import RedisService from '../../common/service/redis.service';
-import { uuidv4 } from 'zod';
+import { randomUUID } from "node:crypto";
 import { S3Service } from '../../common/service/s3.service';
 import FriendshipRepository from '../../DB/repositories/friendship.repository';
 
@@ -93,11 +93,7 @@ class ChatService {
     createGroup = async (req: Request, res: Response) => {
         let { groupName, groupImage, participants } = req.body;
         const createdBy = req.user?._id!;
-        console.log({ createdBy });
-
-        console.log(participants);
         const participantsObjectId = participants.map((participant: string) => new Types.ObjectId(participant));
-        console.log(participantsObjectId);
 
         const users = await this._friendShipModel.find({
             filter: {
@@ -108,14 +104,12 @@ class ChatService {
             },
         })
 
-        console.log(users.length);
-        console.log(participants.length);
 
         if (users.length !== participants.length) {
             throw new Error("some users not found");
         }
 
-        const roomId = uuidv4() as unknown as string
+        const roomId = randomUUID() 
         if (req.file) {
             groupImage = await this._s3Service.uploadFile({
                 path: `chat/${roomId}`,
@@ -143,13 +137,7 @@ class ChatService {
         return success_response({ res, message: "group created successfully" })
     }
 
-    // socketIo APIs
-    sayHi = (data: any) => {
-        console.log({ data });
-    }
-
     joinRoom = async (data: any, socket: Socket, io: Server) => {
-        console.log({ data });
         const { roomId } = data;
 
         const chat = await this._chatModel.findOne({
@@ -165,7 +153,6 @@ class ChatService {
         }
 
         socket.join(chat.roomId)
-        console.log(chat.roomId)
     }
 
     sendMessage = async (data: any, socket: Socket, io: Server) => {
@@ -187,7 +174,7 @@ class ChatService {
         const chat = await this._chatModel.findOneAndUpdate({
             filter: {
                 participants: { $all: [sendTo, createdBy] },
-                group: { $exists: false }
+                groupName: { $exists: false }
             },
             updateData: {
                 $push: {
@@ -225,7 +212,7 @@ class ChatService {
             filter: {
                 _id: groupId,
                 participants: { $all: [createdBy] },
-                group: { $exists: false }
+                groupName: { $exists: true }
             },
             updateData: {
                 $push: {

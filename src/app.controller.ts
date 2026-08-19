@@ -56,26 +56,6 @@ const bootstrap = () => {
 
     app.use("/graphql", createHandler({ schema: gql_schema, context: (req) => ({ req }) }))
 
-
-    async function test() {
-        const user = await new UserRepository().findOne({
-            filter: { firstName: "Alaa" }
-        })
-        console.log({ user });
-    }
-    // test()
-
-    // app.post("/send-notification",(req:Request,res:Response)=>{
-    //     console.log({token:req.body.token});
-    //     notificationService.sendNotification({
-    //         token:req.body.token,
-    //         data:{
-    //             title:"Hi A'laa",
-    //             body:"welcome in our app"
-    //         }
-    //     })
-    // })
-
     app.get("/", (req: Request, res: Response) => {
         res.status(200).json({ message: "Welcome to the Social Media API" });
     })

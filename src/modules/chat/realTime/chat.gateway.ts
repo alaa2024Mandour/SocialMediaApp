@@ -5,9 +5,9 @@ class ChatGateway{
     constructor(){}
 
     registerEvent= async (socket:Socket,io:Server)=>{
-        chatEvents.sayHiEvent(socket)
         chatEvents.sendMessage(socket,io)
         chatEvents.joinRoom(socket,io)
+        chatEvents.sendGroupMessage(socket, io)
     }
 }
 
