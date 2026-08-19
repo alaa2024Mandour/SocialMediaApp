@@ -25,6 +25,8 @@ import socketGateway from './modules/realTime/socket.gateway';
 import friendshipRouter from './modules/friendship/friendship.controller';
 import chatRouter from './modules/chat/chat.controller';
 import reactRouter from './modules/reacts/react.controller';
+import storyRouter from './modules/stories/story.controller';
+import storyCleanupService from './modules/stories/story.cleanup';
 const app: Application = express();
 const port: number = PORT;
 
@@ -53,6 +55,8 @@ const bootstrap = () => {
     app.use("/friendship", friendshipRouter)
     app.use("/chat", chatRouter)
     app.use("/react", reactRouter)
+    app.use("/stories", storyRouter)
+    storyCleanupService.start()
 
     app.use("/graphql", createHandler({ schema: gql_schema, context: (req) => ({ req }) }))
 
